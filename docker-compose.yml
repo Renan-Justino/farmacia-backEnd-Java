@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres_farmacia
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: farmacia_db
+      POSTGRES_USER: farmacia_user
+      POSTGRES_PASSWORD: farmacia_pass
+    volumes:
+      - postgres_farmacia_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: farmacia_api
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+volumes:
+  postgres_farmacia_data:
+
+
+
