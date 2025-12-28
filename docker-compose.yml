@@ -3,6 +3,11 @@ services:
     image: postgres:16
     container_name: postgres_farmacia
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U farmacia_user -d farmacia_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     environment:
       POSTGRES_DB: farmacia_db
       POSTGRES_USER: farmacia_user
@@ -19,7 +24,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+     postgres:
+       condition: service_healthy
 volumes:
   postgres_farmacia_data:
 
