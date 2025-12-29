@@ -1,8 +1,8 @@
 package com.farmacia.api.infra.handler;
 
-import com.farmacia.api.exception.BusinessException;
+import com.farmacia.api.exception.business.BusinessException;
 import com.farmacia.api.exception.ResourceNotFoundException;
-import com.farmacia.api.dto.error.ErrorResponse;
+import com.farmacia.api.infra.handler.dto.ErrorResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

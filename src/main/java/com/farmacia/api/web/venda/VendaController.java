@@ -1,7 +1,7 @@
-package com.farmacia.api.controller;
+package com.farmacia.api.web.venda;
 
-import com.farmacia.api.dto.venda.VendaRequestDTO;
-import com.farmacia.api.dto.venda.VendaResponseDTO;
+import com.farmacia.api.web.venda.dto.VendaRequestDTO;
+import com.farmacia.api.web.venda.dto.VendaResponseDTO;
 import com.farmacia.api.service.VendaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

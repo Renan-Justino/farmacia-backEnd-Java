@@ -1,4 +1,4 @@
-package com.farmacia.api.controller;
+package com.farmacia.api.web.system;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletResponse;

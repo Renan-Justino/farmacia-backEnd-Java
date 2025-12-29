@@ -4,14 +4,14 @@ services:
     container_name: postgres_farmacia
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U farmacia_user -d farmacia_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d drogariaSP" ]
       interval: 5s
       timeout: 5s
       retries: 5
     environment:
-      POSTGRES_DB: farmacia_db
-      POSTGRES_USER: farmacia_user
-      POSTGRES_PASSWORD: farmacia_pass
+      POSTGRES_DB: drogariaSP
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 181009
     ports:
       - "5432:5432"
     volumes:

@@ -1,8 +1,8 @@
 package com.farmacia.api.service;
 
-import com.farmacia.api.dto.itemVenda.ItemVendaRequestDTO;
-import com.farmacia.api.dto.venda.VendaRequestDTO;
-import com.farmacia.api.dto.venda.VendaResponseDTO;
+import com.farmacia.api.web.venda.dto.ItemVendaRequestDTO;
+import com.farmacia.api.web.venda.dto.VendaRequestDTO;
+import com.farmacia.api.web.venda.dto.VendaResponseDTO;
 import com.farmacia.api.exception.ResourceNotFoundException;
 import com.farmacia.api.mapper.VendaMapper;
 import com.farmacia.api.model.ItemVenda;
@@ -69,12 +69,14 @@ public class VendaService {
         return vendaMapper.toDTO(salva);
     }
 
+    @Transactional
     public List<VendaResponseDTO> listarTodas() {
         return vendaRepository.findAll().stream()
                 .map(vendaMapper::toDTO)
                 .toList();
     }
 
+    @Transactional
     public VendaResponseDTO buscarPorId(Long id) {
         Venda venda = vendaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venda não encontrada com ID: " + id));

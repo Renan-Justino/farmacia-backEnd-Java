@@ -1,6 +1,4 @@
-package com.farmacia.api.dto.itemVenda;
-
-import java.math.BigDecimal;
+package com.farmacia.api.web.venda.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,10 +9,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ItemVendaResponseDTO {
+public class ItemVendaRequestDTO {
 
     private Long medicamentoId;
-    private String nomeMedicamento;
     private Integer quantidade;
-    private BigDecimal precoUnitario;
 }

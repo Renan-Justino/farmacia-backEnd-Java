@@ -1,7 +1,7 @@
-package com.farmacia.api.controller;
+package com.farmacia.api.web.medicamento;
 
-import com.farmacia.api.dto.medicamento.MedicamentoRequestDTO;
-import com.farmacia.api.dto.medicamento.MedicamentoResponseDTO;
+import com.farmacia.api.web.medicamento.dto.MedicamentoRequestDTO;
+import com.farmacia.api.web.medicamento.dto.MedicamentoResponseDTO;
 import com.farmacia.api.service.MedicamentoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

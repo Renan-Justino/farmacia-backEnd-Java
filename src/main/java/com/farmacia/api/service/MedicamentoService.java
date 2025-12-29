@@ -1,8 +1,8 @@
 package com.farmacia.api.service;
 
-import com.farmacia.api.dto.medicamento.MedicamentoRequestDTO;
-import com.farmacia.api.dto.medicamento.MedicamentoResponseDTO;
-import com.farmacia.api.exception.BusinessException; // Importe sua exception
+import com.farmacia.api.web.medicamento.dto.MedicamentoRequestDTO;
+import com.farmacia.api.web.medicamento.dto.MedicamentoResponseDTO;
+import com.farmacia.api.exception.business.BusinessException; // Importe sua exception
 import com.farmacia.api.exception.ResourceNotFoundException; // Importe sua exception
 import com.farmacia.api.mapper.MedicamentoMapper;
 import com.farmacia.api.model.Categoria;

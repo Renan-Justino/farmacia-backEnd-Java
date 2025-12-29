@@ -1,7 +1,7 @@
 package com.farmacia.api.mapper;
 
-import com.farmacia.api.dto.medicamento.MedicamentoRequestDTO;
-import com.farmacia.api.dto.medicamento.MedicamentoResponseDTO;
+import com.farmacia.api.web.medicamento.dto.MedicamentoRequestDTO;
+import com.farmacia.api.web.medicamento.dto.MedicamentoResponseDTO;
 import com.farmacia.api.model.Medicamento;
 import org.springframework.stereotype.Component;
 

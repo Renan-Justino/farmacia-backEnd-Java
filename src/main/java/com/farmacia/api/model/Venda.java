@@ -24,7 +24,7 @@ public class Venda {
 
     private BigDecimal valorTotal;
 
-    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL)
-    @JsonIgnore
+    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+
     private List<ItemVenda> itens = new ArrayList<>();
 }

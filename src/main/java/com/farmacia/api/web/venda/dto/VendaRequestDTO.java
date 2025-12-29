@@ -1,6 +1,5 @@
-package com.farmacia.api.dto.venda;
+package com.farmacia.api.web.venda.dto;
 
-import com.farmacia.api.dto.itemVenda.ItemVendaRequestDTO;
 import java.util.List;
 
 import lombok.AllArgsConstructor;

@@ -1,6 +1,4 @@
-package com.farmacia.api.dto.venda;
-
-import com.farmacia.api.dto.itemVenda.ItemVendaResponseDTO;
+package com.farmacia.api.web.venda.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

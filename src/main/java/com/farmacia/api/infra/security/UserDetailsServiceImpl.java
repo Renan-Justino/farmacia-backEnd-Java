@@ -1,4 +1,4 @@
-package com.farmacia.api.auth.infra;
+package com.farmacia.api.infra.security;
 
 import com.farmacia.api.auth.domain.Usuario;
 import com.farmacia.api.auth.repository.UsuarioRepository;

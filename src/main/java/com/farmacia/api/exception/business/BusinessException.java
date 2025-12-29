@@ -1,4 +1,4 @@
-package com.farmacia.api.exception;
+package com.farmacia.api.exception.business;
 
 public class BusinessException extends RuntimeException {
     public BusinessException(String message) {

@@ -1,4 +1,4 @@
-package com.farmacia.api.auth.infra;
+package com.farmacia.api.infra.bootstrap;
 
 import com.farmacia.api.auth.domain.Perfil;
 import com.farmacia.api.auth.domain.Usuario;

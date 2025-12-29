@@ -3,8 +3,8 @@ package com.farmacia.api.service;
 import com.farmacia.api.model.Categoria;
 import com.farmacia.api.repository.CategoriaRepository;
 import org.springframework.stereotype.Service;
-import com.farmacia.api.dto.categoria.CategoriaResponseDTO;
-import com.farmacia.api.dto.categoria.CategoriaRequestDTO;
+import com.farmacia.api.web.categoria.dto.CategoriaResponseDTO;
+import com.farmacia.api.web.categoria.dto.CategoriaRequestDTO;
 
 import java.util.List;
 

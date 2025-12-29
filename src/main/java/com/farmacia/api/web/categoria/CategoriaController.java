@@ -1,7 +1,7 @@
-package com.farmacia.api.controller;
+package com.farmacia.api.web.categoria;
 
-import com.farmacia.api.dto.categoria.CategoriaRequestDTO;
-import com.farmacia.api.dto.categoria.CategoriaResponseDTO;
+import com.farmacia.api.web.categoria.dto.CategoriaRequestDTO;
+import com.farmacia.api.web.categoria.dto.CategoriaResponseDTO;
 import com.farmacia.api.service.CategoriaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

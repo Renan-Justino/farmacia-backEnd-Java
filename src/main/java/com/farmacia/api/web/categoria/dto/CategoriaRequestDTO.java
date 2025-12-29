@@ -1,4 +1,4 @@
-package com.farmacia.api.dto.categoria;
+package com.farmacia.api.web.categoria.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

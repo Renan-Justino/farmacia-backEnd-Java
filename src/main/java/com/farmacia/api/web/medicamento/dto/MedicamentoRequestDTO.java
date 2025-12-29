@@ -1,4 +1,4 @@
-package com.farmacia.api.dto.medicamento;
+package com.farmacia.api.web.medicamento.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

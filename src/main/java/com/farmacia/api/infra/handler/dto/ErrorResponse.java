@@ -1,4 +1,4 @@
-package com.farmacia.api.dto.error;
+package com.farmacia.api.infra.handler.dto;
 
 import java.time.LocalDateTime;
 
