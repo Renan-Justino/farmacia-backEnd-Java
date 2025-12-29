@@ -54,4 +54,10 @@ public class MedicamentoController {
         medicamentoService.excluir(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Void> alterarStatus(@PathVariable Long id, @RequestBody Boolean ativo) {
+        medicamentoService.alterarStatus(id, ativo);
+        return ResponseEntity.noContent().build();
+    }
 }
