@@ -12,6 +12,8 @@ services:
       POSTGRES_DB: farmacia_db
       POSTGRES_USER: farmacia_user
       POSTGRES_PASSWORD: farmacia_pass
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_farmacia_data:/var/lib/postgresql/data
 
