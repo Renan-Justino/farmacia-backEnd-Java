@@ -1,42 +1,42 @@
 package com.farmacia.api.service;
 
+import com.farmacia.api.exception.ResourceNotFoundException;
 import com.farmacia.api.model.Categoria;
 import com.farmacia.api.repository.CategoriaRepository;
-import org.springframework.stereotype.Service;
-import com.farmacia.api.web.categoria.dto.CategoriaResponseDTO;
 import com.farmacia.api.web.categoria.dto.CategoriaRequestDTO;
+import com.farmacia.api.web.categoria.dto.CategoriaResponseDTO;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CategoriaService {
 
     private final CategoriaRepository categoriaRepository;
 
-    public CategoriaService(CategoriaRepository categoriaRepository) {
-        this.categoriaRepository = categoriaRepository;
-    }
-
+    @Transactional
     public CategoriaResponseDTO cadastrar(CategoriaRequestDTO request) {
         Categoria categoria = new Categoria();
         categoria.setNome(request.getNome());
         categoria.setDescricao(request.getDescricao());
 
-        Categoria salva = categoriaRepository.save(categoria);
-        return toResponseDTO(salva);
+        return toResponseDTO(categoriaRepository.save(categoria));
     }
 
+    @Transactional(readOnly = true)
     public List<CategoriaResponseDTO> listarTodas() {
-        return categoriaRepository.findAll()
-                .stream()
+        return categoriaRepository.findAll().stream()
                 .map(this::toResponseDTO)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public CategoriaResponseDTO buscarPorId(Long id) {
         Categoria categoria = categoriaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com ID: " + id)); // Uso correto da exception
         return toResponseDTO(categoria);
     }
 
@@ -48,10 +48,3 @@ public class CategoriaService {
         return dto;
     }
 }
-
-
-
-
-
-
-

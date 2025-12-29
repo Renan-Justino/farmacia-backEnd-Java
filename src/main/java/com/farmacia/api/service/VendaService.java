@@ -8,10 +8,10 @@ import com.farmacia.api.mapper.VendaMapper;
 import com.farmacia.api.model.ItemVenda;
 import com.farmacia.api.model.Medicamento;
 import com.farmacia.api.model.Venda;
-import com.farmacia.api.repository.MedicamentoRepository;
 import com.farmacia.api.repository.VendaRepository;
-import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,22 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class VendaService {
 
     private final VendaRepository vendaRepository;
-    private final MedicamentoRepository medicamentoRepository;
     private final VendaMapper vendaMapper;
-    private final MedicamentoService medicamentoService; // Injetado para baixa de estoque
-
-    public VendaService(VendaRepository vendaRepository,
-                        MedicamentoRepository medicamentoRepository,
-                        VendaMapper vendaMapper,
-                        MedicamentoService medicamentoService) {
-        this.vendaRepository = vendaRepository;
-        this.medicamentoRepository = medicamentoRepository;
-        this.vendaMapper = vendaMapper;
-        this.medicamentoService = medicamentoService;
-    }
+    private final MedicamentoService medicamentoService;
 
     @Transactional
     public VendaResponseDTO registrarVenda(VendaRequestDTO request) {
@@ -45,17 +35,15 @@ public class VendaService {
         BigDecimal totalVenda = BigDecimal.ZERO;
 
         for (ItemVendaRequestDTO itemDTO : request.getItens()) {
-            Medicamento medicamento = medicamentoRepository.findById(itemDTO.getMedicamentoId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Medicamento não encontrado com ID: " + itemDTO.getMedicamentoId()));
+            Medicamento medicamento = medicamentoService.buscarEntidadePorId(itemDTO.getMedicamentoId());
 
-            // DELEGAÇÃO: Agora o MedicamentoService cuida da validação e baixa
             medicamentoService.baixarEstoque(medicamento.getId(), itemDTO.getQuantidade());
 
             ItemVenda item = new ItemVenda();
+            item.setVenda(venda);
             item.setMedicamento(medicamento);
             item.setQuantidade(itemDTO.getQuantidade());
             item.setPrecoUnitario(medicamento.getPreco());
-            item.setVenda(venda);
 
             BigDecimal subtotal = item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade()));
             totalVenda = totalVenda.add(subtotal);
@@ -64,19 +52,17 @@ public class VendaService {
         }
 
         venda.setValorTotal(totalVenda);
-        Venda salva = vendaRepository.save(venda);
-
-        return vendaMapper.toDTO(salva);
+        return vendaMapper.toDTO(vendaRepository.save(venda));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<VendaResponseDTO> listarTodas() {
         return vendaRepository.findAll().stream()
                 .map(vendaMapper::toDTO)
                 .toList();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public VendaResponseDTO buscarPorId(Long id) {
         Venda venda = vendaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venda não encontrada com ID: " + id));
