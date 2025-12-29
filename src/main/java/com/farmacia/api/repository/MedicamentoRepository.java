@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 public interface MedicamentoRepository extends JpaRepository<Medicamento, Long> {
 
     boolean existsByNomeIgnoreCase(String nome);
+
+    boolean existsByCategoriaId(Long categoriaId);
 }

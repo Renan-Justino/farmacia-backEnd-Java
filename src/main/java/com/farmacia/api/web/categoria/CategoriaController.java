@@ -37,4 +37,10 @@ public class CategoriaController {
     public ResponseEntity<CategoriaResponseDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(categoriaService.buscarPorId(id));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+        categoriaService.excluir(id);
+        return ResponseEntity.noContent().build();
+    }
 }
