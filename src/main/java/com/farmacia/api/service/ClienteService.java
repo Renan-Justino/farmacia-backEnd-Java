@@ -1,0 +1,76 @@
+package com.farmacia.api.service;
+
+import com.farmacia.api.exception.business.BusinessException;
+import com.farmacia.api.exception.ResourceNotFoundException;
+import com.farmacia.api.mapper.ClienteMapper;
+import com.farmacia.api.model.Cliente;
+import com.farmacia.api.repository.ClienteRepository;
+import com.farmacia.api.web.cliente.dto.ClienteRequestDTO;
+import com.farmacia.api.web.cliente.dto.ClienteResponseDTO;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class ClienteService {
+
+    private final ClienteRepository repository;
+    private final ClienteMapper mapper;
+
+    @Transactional(readOnly = true)
+    public List<ClienteResponseDTO> listarTodos() {
+        return repository.findAll().stream()
+                .map(mapper::toDTO)
+                .toList(); // Padrão Java 16+ usado no seu VendaService
+    }
+
+    @Transactional(readOnly = true)
+    public ClienteResponseDTO buscarPorId(Long id) {
+        return repository.findById(id)
+                .map(mapper::toDTO)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com ID: " + id));
+    }
+
+    @Transactional
+    public ClienteResponseDTO salvar(ClienteRequestDTO dto) {
+        validarUnicidadeCpf(dto.getCpf());
+        validarMaioridade(dto.getDataNascimento());
+
+        Cliente cliente = mapper.toEntity(dto);
+        return mapper.toDTO(repository.save(cliente));
+    }
+
+    @Transactional
+    public ClienteResponseDTO atualizar(Long id, ClienteRequestDTO dto) {
+        Cliente clienteExistente = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+
+        // Se o CPF mudou, valida se o novo CPF já existe
+        if (!clienteExistente.getCpf().equals(dto.getCpf())) {
+            validarUnicidadeCpf(dto.getCpf());
+        }
+
+        validarMaioridade(dto.getDataNascimento());
+
+        mapper.updateEntity(dto, clienteExistente); // Método sugerido no Mapper para atualizar
+        return mapper.toDTO(repository.save(clienteExistente));
+    }
+
+    // Regras de Negócio privadas (Princípio da Responsabilidade Única)
+    private void validarUnicidadeCpf(String cpf) {
+        if (repository.existsByCpf(cpf)) {
+            throw new BusinessException("Já existe um cliente cadastrado com este CPF.");
+        }
+    }
+
+    private void validarMaioridade(LocalDate dataNascimento) {
+        if (Period.between(dataNascimento, LocalDate.now()).getYears() < 18) {
+            throw new BusinessException("O cliente deve ter pelo menos 18 anos.");
+        }
+    }
+}
