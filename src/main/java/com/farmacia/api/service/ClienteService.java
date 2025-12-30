@@ -1,7 +1,7 @@
 package com.farmacia.api.service;
 
-import com.farmacia.api.exception.business.BusinessException;
 import com.farmacia.api.exception.ResourceNotFoundException;
+import com.farmacia.api.exception.business.BusinessException;
 import com.farmacia.api.mapper.ClienteMapper;
 import com.farmacia.api.model.Cliente;
 import com.farmacia.api.repository.ClienteRepository;
@@ -26,14 +26,19 @@ public class ClienteService {
     public List<ClienteResponseDTO> listarTodos() {
         return repository.findAll().stream()
                 .map(mapper::toDTO)
-                .toList(); // Padrão Java 16+ usado no seu VendaService
+                .toList();
     }
 
+    // Retorna a ENTIDADE para uso interno entre Services
+    public Cliente buscarEntidadePorId(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com ID: " + id));
+    }
+
+    // Retorna o DTO para o Controller
     @Transactional(readOnly = true)
     public ClienteResponseDTO buscarPorId(Long id) {
-        return repository.findById(id)
-                .map(mapper::toDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com ID: " + id));
+        return mapper.toDTO(buscarEntidadePorId(id));
     }
 
     @Transactional
@@ -47,21 +52,18 @@ public class ClienteService {
 
     @Transactional
     public ClienteResponseDTO atualizar(Long id, ClienteRequestDTO dto) {
-        Cliente clienteExistente = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+        Cliente clienteExistente = buscarEntidadePorId(id);
 
-        // Se o CPF mudou, valida se o novo CPF já existe
         if (!clienteExistente.getCpf().equals(dto.getCpf())) {
             validarUnicidadeCpf(dto.getCpf());
         }
 
         validarMaioridade(dto.getDataNascimento());
+        mapper.updateEntity(dto, clienteExistente);
 
-        mapper.updateEntity(dto, clienteExistente); // Método sugerido no Mapper para atualizar
         return mapper.toDTO(repository.save(clienteExistente));
     }
 
-    // Regras de Negócio privadas (Princípio da Responsabilidade Única)
     private void validarUnicidadeCpf(String cpf) {
         if (repository.existsByCpf(cpf)) {
             throw new BusinessException("Já existe um cliente cadastrado com este CPF.");

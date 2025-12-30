@@ -19,9 +19,8 @@ public class EstoqueService {
     private final MovimentacaoEstoqueRepository repository;
     private final MedicamentoService medicamentoService;
 
-    @Transactional(readOnly = true) // Otimização para o banco de dados
+    @Transactional(readOnly = true)
     public List<MovimentacaoEstoque> listarPorMedicamento(Long medicamentoId) {
-        // Fail-Fast: Garante que o medicamento existe antes de buscar histórico
         medicamentoService.buscarEntidadePorId(medicamentoId);
         return repository.findByMedicamentoIdOrderByDataHoraDesc(medicamentoId);
     }
@@ -29,26 +28,28 @@ public class EstoqueService {
     @Transactional
     public void registrarEntrada(MovimentacaoRequestDTO dto) {
         Medicamento medicamento = medicamentoService.buscarEntidadePorId(dto.getMedicamentoId());
-
         medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() + dto.getQuantidade());
-
         salvarMovimentacao(medicamento, TipoMovimentacao.ENTRADA, dto);
     }
 
     @Transactional
     public void registrarSaida(MovimentacaoRequestDTO dto) {
         Medicamento medicamento = medicamentoService.buscarEntidadePorId(dto.getMedicamentoId());
-
         if (medicamento.getQuantidadeEstoque() < dto.getQuantidade()) {
             throw new EstoqueInsuficienteException(medicamento.getNome());
         }
-
         medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() - dto.getQuantidade());
-
         salvarMovimentacao(medicamento, TipoMovimentacao.SAIDA, dto);
     }
 
-    private void salvarMovimentacao(Medicamento m, TipoMovimentacao tipo, MovimentacaoRequestDTO dto) {
+    // Método que o VendaService usa para registrar o histórico
+    @Transactional
+    public void salvarMovimentacaoInterna(Medicamento m, TipoMovimentacao tipo, MovimentacaoRequestDTO dto) {
+        salvarMovimentacao(m, tipo, dto);
+    }
+
+    @Transactional
+    public void salvarMovimentacao(Medicamento m, TipoMovimentacao tipo, MovimentacaoRequestDTO dto) {
         MovimentacaoEstoque mov = new MovimentacaoEstoque();
         mov.setMedicamento(m);
         mov.setTipo(tipo);

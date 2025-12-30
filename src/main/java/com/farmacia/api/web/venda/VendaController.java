@@ -1,39 +1,37 @@
 package com.farmacia.api.web.venda;
 
+import com.farmacia.api.service.VendaService;
 import com.farmacia.api.web.venda.dto.VendaRequestDTO;
 import com.farmacia.api.web.venda.dto.VendaResponseDTO;
-import com.farmacia.api.service.VendaService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/vendas")
+@RequestMapping("/api/vendas")
+@RequiredArgsConstructor
 public class VendaController {
 
     private final VendaService vendaService;
 
-    public VendaController(VendaService vendaService) {
-        this.vendaService = vendaService;
+    @PostMapping
+    public ResponseEntity<VendaResponseDTO> registrar(@RequestBody @Valid VendaRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(vendaService.registrarVenda(request));
     }
 
-    @PostMapping
-    public ResponseEntity<VendaResponseDTO> registrarVenda(
-            @RequestBody @Valid VendaRequestDTO request) {
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(vendaService.registrarVenda(request));
+    // RESOLVE O PROBLEMA: Agora o método listarPorCliente é utilizado
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<List<VendaResponseDTO>> listarPorCliente(@PathVariable Long clienteId) {
+        List<VendaResponseDTO> vendas = vendaService.listarPorCliente(clienteId);
+        return ResponseEntity.ok(vendas);
     }
 
     @GetMapping
-    public ResponseEntity<List<VendaResponseDTO>> listar() {
+    public ResponseEntity<List<VendaResponseDTO>> listarTodas() {
         return ResponseEntity.ok(vendaService.listarTodas());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<VendaResponseDTO> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(vendaService.buscarPorId(id));
     }
 }
