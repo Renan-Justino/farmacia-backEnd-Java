@@ -10,7 +10,11 @@ public class ClienteRequestDTO {
     private String nome;
 
     @NotBlank(message = "CPF é obrigatório")
-    private String cpf; // Aqui você pode usar @CPF se tiver a dependência do Hibernate Validator
+    @Pattern(
+            regexp = "\\d{11}",
+            message = "CPF deve conter 11 dígitos numéricos"
+    )
+    private String cpf;
 
     @Email(message = "E-mail inválido")
     private String email;

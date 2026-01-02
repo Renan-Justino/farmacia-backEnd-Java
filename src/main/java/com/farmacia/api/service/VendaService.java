@@ -1,5 +1,6 @@
 package com.farmacia.api.service;
 
+import com.farmacia.api.exception.ResourceNotFoundException;
 import com.farmacia.api.exception.business.BusinessException;
 import com.farmacia.api.mapper.VendaMapper;
 import com.farmacia.api.model.Cliente;
@@ -90,4 +91,18 @@ public class VendaService {
                 .map(vendaMapper::toDTO)
                 .toList();
     }
+
+    /**
+     * Recupera uma venda específica pelo seu identificador único.
+     * * @param id Identificador da venda.
+     * @return DTO representando a venda encontrada.
+     * @throws ResourceNotFoundException Caso o ID não exista na base de dados.
+     */
+    @Transactional(readOnly = true)
+    public VendaResponseDTO buscarPorId(Long id) {
+        return vendaRepository.findById(id)
+                .map(vendaMapper::toDTO)
+                .orElseThrow(() -> new ResourceNotFoundException("Venda não encontrada com o ID: " + id));
+    }
+
 }

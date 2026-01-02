@@ -18,6 +18,13 @@ public class VendaController {
 
     private final VendaService vendaService;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<VendaResponseDTO> buscarPorId(@PathVariable Long id) {
+        // A lógica de negócio e lançamento de exception ficam encapsuladas no Service.
+        VendaResponseDTO venda = vendaService.buscarPorId(id);
+        return ResponseEntity.ok(venda);
+    }
+
     @PostMapping
     public ResponseEntity<VendaResponseDTO> registrar(@RequestBody @Valid VendaRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(vendaService.registrarVenda(request));

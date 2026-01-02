@@ -3,6 +3,7 @@ package com.farmacia.api.web.medicamento;
 import com.farmacia.api.web.medicamento.dto.MedicamentoRequestDTO;
 import com.farmacia.api.web.medicamento.dto.MedicamentoResponseDTO;
 import com.farmacia.api.service.MedicamentoService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,34 +20,30 @@ public class MedicamentoController {
         this.medicamentoService = medicamentoService;
     }
 
-    // 🔹 REFATORADO: recebe DTO
     @PostMapping
     public ResponseEntity<MedicamentoResponseDTO> cadastrar(
-            @RequestBody MedicamentoRequestDTO request) {
+            @RequestBody @Valid MedicamentoRequestDTO dto) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(medicamentoService.cadastrar(request));
+                .body(medicamentoService.cadastrar(dto));
     }
 
-    // 🔹 REFATORADO
     @GetMapping
     public ResponseEntity<List<MedicamentoResponseDTO>> listar() {
         return ResponseEntity.ok(medicamentoService.listarTodos());
     }
 
-    // 🔹 REFATORADO
     @GetMapping("/{id}")
     public ResponseEntity<MedicamentoResponseDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(medicamentoService.buscarPorId(id));
     }
 
-    // 🔹 REFATORADO
     @PutMapping("/{id}")
     public ResponseEntity<MedicamentoResponseDTO> atualizar(
             @PathVariable Long id,
-            @RequestBody MedicamentoRequestDTO request) {
+            @RequestBody @Valid MedicamentoRequestDTO dto) {
 
-        return ResponseEntity.ok(medicamentoService.atualizar(id, request));
+        return ResponseEntity.ok(medicamentoService.atualizar(id, dto));
     }
 
     @DeleteMapping("/{id}")

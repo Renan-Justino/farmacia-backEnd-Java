@@ -26,13 +26,6 @@ public class MedicamentoService {
     private final VendaRepository vendaRepository;
     private final MedicamentoMapper mapper;
 
-    // --- MÉTODOS DE BUSCA ---
-
-    public Medicamento buscarEntidadePorId(Long id) {
-        return medicamentoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Medicamento não encontrado com ID: " + id));
-    }
-
     @Transactional(readOnly = true)
     public List<MedicamentoResponseDTO> listarTodos() {
         return medicamentoRepository.findAll().stream()
@@ -45,7 +38,61 @@ public class MedicamentoService {
         return mapper.toDTO(buscarEntidadePorId(id));
     }
 
-    // --- REGRAS DE NEGÓCIO E BLOQUEIOS ---
+    public Medicamento buscarEntidadePorId(Long id) {
+        return medicamentoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicamento não encontrado com ID: " + id));
+    }
+
+    @Transactional
+    public MedicamentoResponseDTO cadastrar(MedicamentoRequestDTO request) {
+        // PONTO CRÍTICO: Medicamentos inativos não podem ser criados
+        if (request.getAtivo() != null && !request.getAtivo()) {
+            throw new BusinessException("Não é permitido cadastrar um medicamento já inativo.");
+        }
+
+        // PONTO CRÍTICO: Validar se já existe pelo nome
+        if (medicamentoRepository.existsByNomeIgnoreCase(request.getNome())) {
+            throw new BusinessException("Já existe um medicamento com o nome: " + request.getNome());
+        }
+
+        // PONTO CRÍTICO: Data de validade deve ser futura (Double check)
+        if (request.getDataValidade().isBefore(LocalDate.now())) {
+            throw new MedicamentoVencidoException();
+        }
+
+        Categoria categoria = buscarCategoria(request.getCategoriaId());
+        Medicamento medicamento = mapper.toEntity(request);
+        medicamento.setCategoria(categoria);
+
+        // Garante que o padrão seja ativo se vier nulo
+        if (medicamento.getAtivo() == null) {
+            medicamento.setAtivo(true);
+        }
+
+        return mapper.toDTO(medicamentoRepository.save(medicamento));
+    }
+
+    @Transactional
+    public MedicamentoResponseDTO atualizar(Long id, MedicamentoRequestDTO request) {
+        Medicamento existente = buscarEntidadePorId(id);
+
+        // PONTO CRÍTICO: Validação de data na atualização
+        if (request.getDataValidade() != null && request.getDataValidade().isBefore(LocalDate.now())) {
+            throw new MedicamentoVencidoException();
+        }
+
+        Categoria categoria = buscarCategoria(request.getCategoriaId());
+
+        existente.setNome(request.getNome());
+        existente.setDescricao(request.getDescricao());
+        existente.setPreco(request.getPreco());
+        existente.setQuantidadeEstoque(request.getQuantidadeEstoque());
+        existente.setDataValidade(request.getDataValidade());
+        existente.setAtivo(request.getAtivo());
+        existente.setCategoria(categoria);
+
+        return mapper.toDTO(medicamentoRepository.save(existente));
+    }
 
     @Transactional
     public void baixarEstoque(Long id, Integer quantidade) {
@@ -66,38 +113,6 @@ public class MedicamentoService {
         medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() - quantidade);
     }
 
-    // --- CRUD OPERAÇÕES ---
-
-    @Transactional
-    public MedicamentoResponseDTO cadastrar(MedicamentoRequestDTO request) {
-        if (medicamentoRepository.existsByNomeIgnoreCase(request.getNome())) {
-            throw new BusinessException("Já existe um medicamento com o nome: " + request.getNome());
-        }
-
-        Categoria categoria = buscarCategoria(request.getCategoriaId());
-        Medicamento medicamento = mapper.toEntity(request);
-        medicamento.setCategoria(categoria);
-        medicamento.setAtivo(request.getAtivo() != null ? request.getAtivo() : true);
-
-        return mapper.toDTO(medicamentoRepository.save(medicamento));
-    }
-
-    @Transactional
-    public MedicamentoResponseDTO atualizar(Long id, MedicamentoRequestDTO request) {
-        Medicamento existente = buscarEntidadePorId(id);
-        Categoria categoria = buscarCategoria(request.getCategoriaId());
-
-        existente.setNome(request.getNome());
-        existente.setDescricao(request.getDescricao());
-        existente.setPreco(request.getPreco());
-        existente.setQuantidadeEstoque(request.getQuantidadeEstoque());
-        existente.setDataValidade(request.getDataValidade());
-        existente.setAtivo(request.getAtivo());
-        existente.setCategoria(categoria);
-
-        return mapper.toDTO(medicamentoRepository.save(existente));
-    }
-
     @Transactional
     public void alterarStatus(Long id, Boolean novoStatus) {
         Medicamento medicamento = buscarEntidadePorId(id);
@@ -107,8 +122,6 @@ public class MedicamentoService {
     @Transactional
     public void excluir(Long id) {
         Medicamento medicamento = buscarEntidadePorId(id);
-
-        // Soft Delete: Se houver vendas, apenas inativa. Se não, deleta.
         boolean jaVendido = vendaRepository.existsByItensMedicamentoId(id);
 
         if (jaVendido) {
@@ -117,8 +130,6 @@ public class MedicamentoService {
             medicamentoRepository.delete(medicamento);
         }
     }
-
-    // --- AUXILIARES ---
 
     private Categoria buscarCategoria(Long id) {
         return categoriaRepository.findById(id)

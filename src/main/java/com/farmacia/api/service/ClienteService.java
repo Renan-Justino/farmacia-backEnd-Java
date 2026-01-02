@@ -2,6 +2,7 @@ package com.farmacia.api.service;
 
 import com.farmacia.api.exception.ResourceNotFoundException;
 import com.farmacia.api.exception.business.BusinessException;
+import com.farmacia.api.exception.business.ClienteMenorDeIdadeException;
 import com.farmacia.api.mapper.ClienteMapper;
 import com.farmacia.api.model.Cliente;
 import com.farmacia.api.repository.ClienteRepository;
@@ -72,7 +73,9 @@ public class ClienteService {
 
     private void validarMaioridade(LocalDate dataNascimento) {
         if (Period.between(dataNascimento, LocalDate.now()).getYears() < 18) {
-            throw new BusinessException("O cliente deve ter pelo menos 18 anos.");
+            throw new ClienteMenorDeIdadeException(
+                    "É necessário ter 18 anos ou mais para se cadastrar"
+            );
         }
     }
 }
