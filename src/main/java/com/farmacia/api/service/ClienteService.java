@@ -16,6 +16,10 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
 
+/**
+ * Camada de serviço para gestão de clientes.
+ * Centraliza as regras de negócio e garante a integridade dos dados antes da persistência.
+ */
 @Service
 @RequiredArgsConstructor
 public class ClienteService {
@@ -30,33 +34,44 @@ public class ClienteService {
                 .toList();
     }
 
-    // Retorna a ENTIDADE para uso interno entre Services
     public Cliente buscarEntidadePorId(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com ID: " + id));
     }
 
-    // Retorna o DTO para o Controller
     @Transactional(readOnly = true)
     public ClienteResponseDTO buscarPorId(Long id) {
         return mapper.toDTO(buscarEntidadePorId(id));
     }
 
+    /**
+     * Persiste um novo cliente após validar restrições de unicidade e maioridade.
+     */
     @Transactional
     public ClienteResponseDTO salvar(ClienteRequestDTO dto) {
         validarUnicidadeCpf(dto.getCpf());
+        validarUnicidadeEmail(dto.getEmail());
         validarMaioridade(dto.getDataNascimento());
 
         Cliente cliente = mapper.toEntity(dto);
         return mapper.toDTO(repository.save(cliente));
     }
 
+    /**
+     * Atualiza dados de um cliente existente, validando se novos dados conflitam com registros atuais.
+     */
     @Transactional
     public ClienteResponseDTO atualizar(Long id, ClienteRequestDTO dto) {
         Cliente clienteExistente = buscarEntidadePorId(id);
 
+        // Valida se o novo CPF já pertence a outro usuário
         if (!clienteExistente.getCpf().equals(dto.getCpf())) {
             validarUnicidadeCpf(dto.getCpf());
+        }
+
+        // Valida se o novo Email já pertence a outro usuário
+        if (!clienteExistente.getEmail().equalsIgnoreCase(dto.getEmail())) {
+            validarUnicidadeEmail(dto.getEmail());
         }
 
         validarMaioridade(dto.getDataNascimento());
@@ -68,6 +83,15 @@ public class ClienteService {
     private void validarUnicidadeCpf(String cpf) {
         if (repository.existsByCpf(cpf)) {
             throw new BusinessException("Já existe um cliente cadastrado com este CPF.");
+        }
+    }
+
+    /**
+     * Garante a unicidade do e-mail na base de dados, prevenindo Constraint Violations genéricas (Erro 500).
+     */
+    private void validarUnicidadeEmail(String email) {
+        if (repository.existsByEmail(email)) {
+            throw new BusinessException("Já existe um cliente cadastrado com este e-mail.");
         }
     }
 

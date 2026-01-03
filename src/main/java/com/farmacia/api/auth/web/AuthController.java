@@ -3,6 +3,7 @@ package com.farmacia.api.auth.web;
 import com.farmacia.api.auth.web.dto.LoginRequestDTO;
 import com.farmacia.api.auth.web.dto.LoginResponseDTO;
 import com.farmacia.api.infra.security.JwtService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
