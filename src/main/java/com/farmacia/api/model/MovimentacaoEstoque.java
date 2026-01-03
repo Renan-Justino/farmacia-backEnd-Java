@@ -1,6 +1,7 @@
 package com.farmacia.api.model;
 
 import com.farmacia.api.model.enums.TipoMovimentacao;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -14,8 +15,9 @@ public class MovimentacaoEstoque {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medicamento_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Medicamento medicamento;
 
     @Enumerated(EnumType.STRING)
@@ -29,4 +31,3 @@ public class MovimentacaoEstoque {
 
     private LocalDateTime dataHora = LocalDateTime.now();
 }
-

@@ -1,8 +1,8 @@
 package com.farmacia.api.web.estoque;
 
-import com.farmacia.api.model.MovimentacaoEstoque;
 import com.farmacia.api.service.EstoqueService;
 import com.farmacia.api.web.estoque.dto.MovimentacaoRequestDTO;
+import com.farmacia.api.web.estoque.dto.MovimentacaoResponseDTO; // Import necessário
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,7 +36,7 @@ public class EstoqueController {
 
     @GetMapping("/{medicamentoId}")
     @Operation(summary = "Histórico de movimentação", description = "Lista todas as entradas e saídas de um medicamento específico.")
-    public ResponseEntity<List<MovimentacaoEstoque>> obterHistorico(@PathVariable Long medicamentoId) {
+    public ResponseEntity<List<MovimentacaoResponseDTO>> obterHistorico(@PathVariable Long medicamentoId) {
         return ResponseEntity.ok(estoqueService.listarPorMedicamento(medicamentoId));
     }
 }

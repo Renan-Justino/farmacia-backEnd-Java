@@ -1,6 +1,7 @@
 package com.farmacia.api.model;
 
-import com.farmacia.api.web.medicamento.dto.MedicamentoUpdateDTO; // Import necessário
+import com.farmacia.api.web.medicamento.dto.MedicamentoUpdateDTO;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +12,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Getter // Melhor que @Data para entidades JPA
+@Table(name = "medicamento")
+@Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,12 +41,9 @@ public class Medicamento {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Categoria categoria;
 
-    /**
-     * Método de domínio (Rich Model) para atualização de dados cadastrais.
-     * Protege a integridade do estoque, permitindo alterações apenas em campos permitidos.
-     */
     public void atualizarDados(MedicamentoUpdateDTO dto, Categoria novaCategoria) {
         this.nome = dto.nome();
         this.descricao = dto.descricao();

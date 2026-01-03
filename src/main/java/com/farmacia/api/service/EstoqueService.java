@@ -6,6 +6,7 @@ import com.farmacia.api.model.MovimentacaoEstoque;
 import com.farmacia.api.model.enums.TipoMovimentacao;
 import com.farmacia.api.repository.MovimentacaoEstoqueRepository;
 import com.farmacia.api.web.estoque.dto.MovimentacaoRequestDTO;
+import com.farmacia.api.web.estoque.dto.MovimentacaoResponseDTO; // Import necessário
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,36 +21,53 @@ public class EstoqueService {
     private final MedicamentoService medicamentoService;
 
     @Transactional(readOnly = true)
-    public List<MovimentacaoEstoque> listarPorMedicamento(Long medicamentoId) {
+    public List<MovimentacaoResponseDTO> listarPorMedicamento(Long medicamentoId) {
         medicamentoService.buscarEntidadePorId(medicamentoId);
-        return repository.findByMedicamentoIdOrderByDataHoraDesc(medicamentoId);
+
+        // Converte para DTO para evitar o erro de proxy/no session do Jackson
+        return repository.findByMedicamentoIdOrderByDataHoraDesc(medicamentoId)
+                .stream()
+                .map(m -> new MovimentacaoResponseDTO(
+                        m.getId(),
+                        m.getMedicamento().getNome(),
+                        m.getTipo().name(),
+                        m.getQuantidade(),
+                        m.getObservacao(),
+                        m.getDataHora()
+                )).toList();
     }
 
     @Transactional
     public void registrarEntrada(MovimentacaoRequestDTO dto) {
-        Medicamento medicamento = medicamentoService.buscarEntidadePorId(dto.getMedicamentoId());
-        medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() + dto.getQuantidade());
-        salvarMovimentacao(medicamento, TipoMovimentacao.ENTRADA, dto);
+        processarMovimentacao(dto, TipoMovimentacao.ENTRADA);
     }
 
     @Transactional
     public void registrarSaida(MovimentacaoRequestDTO dto) {
-        Medicamento medicamento = medicamentoService.buscarEntidadePorId(dto.getMedicamentoId());
-        if (medicamento.getQuantidadeEstoque() < dto.getQuantidade()) {
-            throw new EstoqueInsuficienteException(medicamento.getNome());
-        }
-        medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() - dto.getQuantidade());
-        salvarMovimentacao(medicamento, TipoMovimentacao.SAIDA, dto);
+        processarMovimentacao(dto, TipoMovimentacao.SAIDA);
     }
 
-    // Método que o VendaService usa para registrar o histórico
     @Transactional
     public void salvarMovimentacaoInterna(Medicamento m, TipoMovimentacao tipo, MovimentacaoRequestDTO dto) {
-        salvarMovimentacao(m, tipo, dto);
+        salvarLogMovimentacao(m, tipo, dto);
     }
 
-    @Transactional
-    public void salvarMovimentacao(Medicamento m, TipoMovimentacao tipo, MovimentacaoRequestDTO dto) {
+    private void processarMovimentacao(MovimentacaoRequestDTO dto, TipoMovimentacao tipo) {
+        Medicamento medicamento = medicamentoService.buscarEntidadePorId(dto.getMedicamentoId());
+
+        if (tipo == TipoMovimentacao.SAIDA) {
+            if (medicamento.getQuantidadeEstoque() < dto.getQuantidade()) {
+                throw new EstoqueInsuficienteException(medicamento.getNome());
+            }
+            medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() - dto.getQuantidade());
+        } else {
+            medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() + dto.getQuantidade());
+        }
+
+        salvarLogMovimentacao(medicamento, tipo, dto);
+    }
+
+    private void salvarLogMovimentacao(Medicamento m, TipoMovimentacao tipo, MovimentacaoRequestDTO dto) {
         MovimentacaoEstoque mov = new MovimentacaoEstoque();
         mov.setMedicamento(m);
         mov.setTipo(tipo);

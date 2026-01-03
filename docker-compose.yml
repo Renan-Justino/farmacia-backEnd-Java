@@ -12,6 +12,9 @@ services:
       POSTGRES_DB: drogariaSP
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 181009
+      # Sincroniza o fuso horário interno do Postgres
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
     ports:
       - "5432:5432"
     volumes:
@@ -22,14 +25,14 @@ services:
     container_name: farmacia_api
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      # Sincroniza o fuso horário da JVM (Java) para o Brasil
+      TZ: America/Sao_Paulo
     restart: unless-stopped
     ports:
       - "8080:8080"
     depends_on:
-     postgres:
-       condition: service_healthy
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_farmacia_data:
-
-
-
