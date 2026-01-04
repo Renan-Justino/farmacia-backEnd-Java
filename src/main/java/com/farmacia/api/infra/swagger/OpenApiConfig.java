@@ -9,9 +9,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuração centralizada do ecossistema de documentação OpenAPI (Swagger).
- * * Esta classe define os metadados da API, esquemas de segurança e, principalmente,
- * a ordem lógica de exibição dos recursos através da declaração sequencial de Tags.
+ * Configuração centralizada do OpenAPI/Swagger para a API.
+ * Define:
+ * - Metadados da API (título, versão, descrição)
+ * - Esquemas de segurança (JWT Bearer)
+ * - Organização de Tags por domínio
  */
 @Configuration
 @OpenAPIDefinition(
@@ -22,12 +24,12 @@ import org.springframework.context.annotation.Configuration;
         ),
         security = @SecurityRequirement(name = "bearerAuth"),
         tags = {
-                @Tag(name = "Auth", description = "Gerenciamento de autenticação, segurança e tokens JWT"),
+                @Tag(name = "Auth", description = "Gerenciamento de autenticação e tokens JWT"),
                 @Tag(name = "Cliente", description = "Operações de cadastro, manutenção e consulta de clientes"),
-                @Tag(name = "Categoria", description = "Classificação e organização mercadológica de produtos"),
-                @Tag(name = "Medicamento", description = "Catálogo técnico de produtos, especificações e preços"),
-                @Tag(name = "Venda", description = "Orquestração de transações comerciais e histórico de pedidos"),
-                @Tag(name = "Estoque", description = "Monitoramento de movimentações, entradas e saídas físicas"),
+                @Tag(name = "Categoria", description = "Classificação e organização de produtos"),
+                @Tag(name = "Medicamento", description = "Catálogo de produtos, especificações e preços"),
+                @Tag(name = "Venda", description = "Transações comerciais e histórico de pedidos"),
+                @Tag(name = "Estoque", description = "Monitoramento de entradas e saídas de estoque"),
                 @Tag(name = "Alerta", description = "Serviços de monitoramento proativo para itens críticos e validade")
         }
 )
@@ -36,13 +38,8 @@ import org.springframework.context.annotation.Configuration;
         type = SecuritySchemeType.HTTP,
         scheme = "bearer",
         bearerFormat = "JWT",
-        description = "Insira o token JWT gerado no endpoint de login para autenticar as requisições."
+        description = "Insira o token JWT obtido no login para autenticar as requisições."
 )
 public class OpenApiConfig {
-        /*
-         * Nota de Arquitetura:
-         * A ordem definida na lista 'tags' acima dita a prioridade de exibição no Swagger UI.
-         * Certifique-se de que cada Controller utilize a anotação @Tag(name = "NOME_EXATO")
-         * para que os endpoints sejam agrupados sob as definições e descrições aqui centralizadas.
-         */
+        // Classe apenas de configuração; todas as definições estão nas anotações.
 }

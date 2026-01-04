@@ -1,22 +1,17 @@
 package com.farmacia.api.infra.security;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import lombok.Getter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@Component
-public class JwtProperties {
+@Getter
+@ConfigurationProperties(prefix = "jwt")
+public final class JwtProperties {
 
-    @Value("${jwt.secret}")
-    private String secret;
+    private final String secret;
+    private final Long expiration;
 
-    @Value("${jwt.expiration}")
-    private Long expiration;
-
-    public String getSecret() {
-        return secret;
-    }
-
-    public Long getExpiration() {
-        return expiration;
+    public JwtProperties(String secret, Long expiration) {
+        this.secret = secret;
+        this.expiration = expiration;
     }
 }
