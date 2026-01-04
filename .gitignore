@@ -1,18 +1,15 @@
 ### Build and Artifacts ###
-# Ignora binários e artefatos gerados pelo build do Maven/Gradle
 target/
 build/
 bin/
 out/
 
 ### Maven Wrapper ###
-# Ignora o JAR do wrapper, mantendo apenas os scripts executáveis
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
 ### IDE and Editor Settings ###
-# Ignora configurações específicas de editores para evitar conflitos entre desenvolvedores
 .idea/
 *.iws
 *.iml
@@ -23,12 +20,11 @@ out/
 .project
 .factorypath
 
-### OS and Logging ###
-# Ignora arquivos temporários do sistema operacional e logs de execução
+### OS and Logs ###
 *.log
 .DS_Store
 Thumbs.db
 
-### Security and Sensitive Data ###
-# Ignora arquivos que podem conter segredos ou senhas locais
-.SPRING_DATASOURCE_PASSWORD
+### Spring Profiles (Segredos locais) ###
+application-local.yml
+.env

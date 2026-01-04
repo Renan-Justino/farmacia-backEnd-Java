@@ -1,24 +1,19 @@
 package com.farmacia.api.service;
 
 import com.farmacia.api.exception.ResourceNotFoundException;
-import com.farmacia.api.exception.business.BusinessException;
+import com.farmacia.api.exception.business.*;
 import com.farmacia.api.mapper.VendaMapper;
-import com.farmacia.api.model.Cliente;
-import com.farmacia.api.model.ItemVenda;
-import com.farmacia.api.model.Medicamento;
-import com.farmacia.api.model.Venda;
-import com.farmacia.api.model.enums.TipoMovimentacao;
+import com.farmacia.api.model.*;
 import com.farmacia.api.repository.VendaRepository;
 import com.farmacia.api.web.estoque.dto.MovimentacaoRequestDTO;
-import com.farmacia.api.web.venda.dto.ItemVendaRequestDTO;
-import com.farmacia.api.web.venda.dto.VendaRequestDTO;
-import com.farmacia.api.web.venda.dto.VendaResponseDTO;
+import com.farmacia.api.web.venda.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,8 +27,13 @@ public class VendaService {
     private final ClienteService clienteService;
     private final EstoqueService estoqueService;
 
+    /**
+     * Boundary transacional da venda.
+     * Garante atomicidade entre validações, baixa de estoque e persistência.
+     */
     @Transactional
     public VendaResponseDTO registrarVenda(VendaRequestDTO request) {
+
         if (request.getItens() == null || request.getItens().isEmpty()) {
             throw new BusinessException("Não é possível realizar uma venda sem itens.");
         }
@@ -42,44 +42,61 @@ public class VendaService {
 
         Venda venda = new Venda();
         venda.setCliente(cliente);
-        venda.setDataVenda(LocalDateTime.now());
+        venda.setDataVenda(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
         venda.setItens(new ArrayList<>());
 
         BigDecimal totalVenda = BigDecimal.ZERO;
 
         for (ItemVendaRequestDTO itemDTO : request.getItens()) {
+
             Medicamento medicamento = medicamentoService.buscarEntidadePorId(itemDTO.getMedicamentoId());
 
-            // 1. Baixa o estoque do Medicamento
-            medicamentoService.baixarEstoque(medicamento.getId(), itemDTO.getQuantidade());
+            if (itemDTO.getQuantidade() <= 0) {
+                throw new BusinessException(
+                        "A quantidade do medicamento " + medicamento.getNome() + " deve ser maior que zero."
+                );
+            }
 
-            // 2. REGISTRA NO ESTOQUE (Faltava este passo no seu fluxo anterior)
+            if (Boolean.FALSE.equals(medicamento.getAtivo())) {
+                throw new MedicamentoInativoException();
+            }
+
+            // Validação baseada na data da venda, não na data atual do sistema
+            if (medicamento.getDataValidade() != null &&
+                    medicamento.getDataValidade().isBefore(venda.getDataVenda().toLocalDate())) {
+                throw new MedicamentoVencidoException();
+            }
+
+            // Baixa de estoque ocorre antes do commit para garantir consistência
             MovimentacaoRequestDTO mov = new MovimentacaoRequestDTO();
             mov.setMedicamentoId(medicamento.getId());
             mov.setQuantidade(itemDTO.getQuantidade());
-            mov.setObservacao("Venda ao cliente: " + cliente.getNome());
-            estoqueService.salvarMovimentacaoInterna(medicamento, TipoMovimentacao.SAIDA, mov);
+            mov.setObservacao("Venda - Cliente: " + cliente.getNome());
+            estoqueService.registrarSaida(mov);
 
-            // 3. Monta o Item da Venda
             ItemVenda item = new ItemVenda();
             item.setVenda(venda);
             item.setMedicamento(medicamento);
             item.setQuantidade(itemDTO.getQuantidade());
             item.setPrecoUnitario(medicamento.getPreco());
 
-            BigDecimal subtotal = item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade()));
+            BigDecimal subtotal =
+                    item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade()));
+
             totalVenda = totalVenda.add(subtotal);
             venda.getItens().add(item);
         }
 
         venda.setValorTotal(totalVenda);
+
+        // Persistência única do Aggregate Root (cascade cuida dos itens)
         return vendaMapper.toDTO(vendaRepository.save(venda));
     }
 
-    // MÉTODO QUE ESTAVA FALTANDO
     @Transactional(readOnly = true)
     public List<VendaResponseDTO> listarTodas() {
-        return vendaRepository.findAll().stream()
+        return vendaRepository.findAll()
+                .stream()
                 .map(vendaMapper::toDTO)
                 .toList();
     }
@@ -87,22 +104,19 @@ public class VendaService {
     @Transactional(readOnly = true)
     public List<VendaResponseDTO> listarPorCliente(Long clienteId) {
         clienteService.buscarEntidadePorId(clienteId);
-        return vendaRepository.findByClienteIdOrderByDataVendaDesc(clienteId).stream()
+        return vendaRepository
+                .findByClienteIdOrderByDataVendaDesc(clienteId)
+                .stream()
                 .map(vendaMapper::toDTO)
                 .toList();
     }
 
-    /**
-     * Recupera uma venda específica pelo seu identificador único.
-     * * @param id Identificador da venda.
-     * @return DTO representando a venda encontrada.
-     * @throws ResourceNotFoundException Caso o ID não exista na base de dados.
-     */
     @Transactional(readOnly = true)
     public VendaResponseDTO buscarPorId(Long id) {
         return vendaRepository.findById(id)
                 .map(vendaMapper::toDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Venda não encontrada com o ID: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Venda não encontrada com o ID: " + id)
+                );
     }
-
 }

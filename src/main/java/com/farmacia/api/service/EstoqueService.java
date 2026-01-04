@@ -6,11 +6,13 @@ import com.farmacia.api.model.MovimentacaoEstoque;
 import com.farmacia.api.model.enums.TipoMovimentacao;
 import com.farmacia.api.repository.MovimentacaoEstoqueRepository;
 import com.farmacia.api.web.estoque.dto.MovimentacaoRequestDTO;
-import com.farmacia.api.web.estoque.dto.MovimentacaoResponseDTO; // Import necessário
+import com.farmacia.api.web.estoque.dto.MovimentacaoResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -23,8 +25,6 @@ public class EstoqueService {
     @Transactional(readOnly = true)
     public List<MovimentacaoResponseDTO> listarPorMedicamento(Long medicamentoId) {
         medicamentoService.buscarEntidadePorId(medicamentoId);
-
-        // Converte para DTO para evitar o erro de proxy/no session do Jackson
         return repository.findByMedicamentoIdOrderByDataHoraDesc(medicamentoId)
                 .stream()
                 .map(m -> new MovimentacaoResponseDTO(
@@ -47,16 +47,11 @@ public class EstoqueService {
         processarMovimentacao(dto, TipoMovimentacao.SAIDA);
     }
 
-    @Transactional
-    public void salvarMovimentacaoInterna(Medicamento m, TipoMovimentacao tipo, MovimentacaoRequestDTO dto) {
-        salvarLogMovimentacao(m, tipo, dto);
-    }
-
     private void processarMovimentacao(MovimentacaoRequestDTO dto, TipoMovimentacao tipo) {
         Medicamento medicamento = medicamentoService.buscarEntidadePorId(dto.getMedicamentoId());
 
         if (tipo == TipoMovimentacao.SAIDA) {
-            if (medicamento.getQuantidadeEstoque() < dto.getQuantidade()) {
+            if (medicamento.getQuantidadeEstoque() <= 0 || medicamento.getQuantidadeEstoque() < dto.getQuantidade()) {
                 throw new EstoqueInsuficienteException(medicamento.getNome());
             }
             medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() - dto.getQuantidade());
@@ -73,6 +68,7 @@ public class EstoqueService {
         mov.setTipo(tipo);
         mov.setQuantidade(dto.getQuantidade());
         mov.setObservacao(dto.getObservacao());
+        mov.setDataHora(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
         repository.save(mov);
     }
 }

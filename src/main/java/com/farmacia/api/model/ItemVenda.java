@@ -17,15 +17,19 @@ public class ItemVenda {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "venda_id")
-    @JsonIgnore
+    // ItemVenda não existe sem Venda (entidade dependente do agregado)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "venda_id", nullable = false)
+    @JsonIgnore // Evita ciclo infinito de serialização
     private Venda venda;
 
-    @ManyToOne
+    // Medicamento é referência externa ao agregado
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "medicamento_id", nullable = false)
     private Medicamento medicamento;
 
     private Integer quantidade;
 
+    // Preço unitário é copiado no momento da venda para histórico imutável
     private BigDecimal precoUnitario;
 }

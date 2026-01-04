@@ -1,10 +1,7 @@
 package com.farmacia.api.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,14 +19,21 @@ public class Venda {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime dataVenda = LocalDateTime.now();
+    // Timestamp da venda, definido no serviço para garantir consistência de timezone
+    private LocalDateTime dataVenda;
 
     private BigDecimal valorTotal;
 
-    @ManyToOne
-    @JoinColumn(name = "cliente_id")
+    // Venda é dependente de Cliente, mas Cliente é agregado independente
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    // Venda é Aggregate Root: itens são persistidos e removidos em cascata
+    @OneToMany(
+            mappedBy = "venda",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private List<ItemVenda> itens = new ArrayList<>();
 }
