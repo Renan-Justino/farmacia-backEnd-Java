@@ -1,15 +1,21 @@
 package com.farmacia.api.mapper;
 
+import com.farmacia.api.model.Medicamento;
 import com.farmacia.api.web.medicamento.dto.MedicamentoRequestDTO;
 import com.farmacia.api.web.medicamento.dto.MedicamentoResponseDTO;
 import com.farmacia.api.web.medicamento.dto.MedicamentoUpdateDTO;
-import com.farmacia.api.model.Medicamento;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 @Component
 public class MedicamentoMapper {
 
-    // USADO NO POST (Cadastro inicial)
+    /**
+     * Converte DTO de criação para entidade.
+     * Define 'ativo' como true se não informado.
+     * Usado no POST /medicamentos
+     */
     public Medicamento toEntity(MedicamentoRequestDTO dto) {
         if (dto == null) return null;
 
@@ -24,10 +30,14 @@ public class MedicamentoMapper {
         return m;
     }
 
-    // NOVO MÉTODO: USADO NO PUT
-    // Este método não recebe e não altera o estoque
+    /**
+     * Atualiza entidade existente a partir do DTO de update.
+     * Não altera estoque nem outros campos controlados pelo domínio.
+     * Usado no PUT /medicamentos/{id}
+     */
     public void updateEntityFromDTO(MedicamentoUpdateDTO dto, Medicamento entity) {
-        if (dto == null) return;
+        Objects.requireNonNull(dto, "MedicamentoUpdateDTO não pode ser nulo");
+        Objects.requireNonNull(entity, "Medicamento não pode ser nulo");
 
         entity.setNome(dto.nome());
         entity.setDescricao(dto.descricao());
@@ -36,6 +46,10 @@ public class MedicamentoMapper {
         entity.setAtivo(dto.ativo());
     }
 
+    /**
+     * Converte entidade para DTO de resposta.
+     * Inclui dados da categoria, se existir.
+     */
     public MedicamentoResponseDTO toDTO(Medicamento entity) {
         if (entity == null) return null;
 

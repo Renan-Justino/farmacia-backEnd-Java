@@ -5,6 +5,8 @@ import com.farmacia.api.web.cliente.dto.ClienteRequestDTO;
 import com.farmacia.api.web.cliente.dto.ClienteResponseDTO;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 @Component
 public class ClienteMapper {
 
@@ -13,9 +15,7 @@ public class ClienteMapper {
      * Não expõe campos de controle interno (ex: ativo).
      */
     public ClienteResponseDTO toDTO(Cliente entity) {
-        if (entity == null) {
-            return null;
-        }
+        if (entity == null) return null;
 
         return new ClienteResponseDTO(
                 entity.getId(),
@@ -31,9 +31,7 @@ public class ClienteMapper {
      * Campos gerenciados pelo domínio (id, ativo) não são atribuídos aqui.
      */
     public Cliente toEntity(ClienteRequestDTO dto) {
-        if (dto == null) {
-            return null;
-        }
+        if (dto == null) return null;
 
         Cliente cliente = new Cliente();
         cliente.setNome(dto.getNome());
@@ -45,10 +43,13 @@ public class ClienteMapper {
     }
 
     /**
-     * Atualiza uma entidade existente.
-     * Método separado evita sobrescrita indevida de estado persistente.
+     * Atualiza uma entidade existente com os dados do DTO.
+     * @throws NullPointerException se entity ou dto forem nulos.
      */
     public void updateEntity(ClienteRequestDTO dto, Cliente entity) {
+        Objects.requireNonNull(dto, "ClienteRequestDTO não pode ser nulo");
+        Objects.requireNonNull(entity, "Cliente não pode ser nulo");
+
         entity.setNome(dto.getNome());
         entity.setCpf(dto.getCpf());
         entity.setEmail(dto.getEmail());
