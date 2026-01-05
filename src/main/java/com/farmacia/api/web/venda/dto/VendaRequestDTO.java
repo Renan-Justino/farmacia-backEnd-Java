@@ -1,5 +1,6 @@
 package com.farmacia.api.web.venda.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -16,8 +17,10 @@ import java.util.List;
 public class VendaRequestDTO {
 
     @NotNull(message = "O cliente é obrigatório")
+    @Schema(description = "ID do cliente que realiza a compra", example = "0")
     private Long clienteId;
 
     @NotEmpty(message = "A venda deve possuir pelo menos um item")
+    @Schema(description = "Lista de medicamentos e suas quantidades")
     private List<ItemVendaRequestDTO> itens;
 }

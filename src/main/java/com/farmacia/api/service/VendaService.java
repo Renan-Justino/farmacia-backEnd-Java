@@ -3,10 +3,15 @@ package com.farmacia.api.service;
 import com.farmacia.api.exception.ResourceNotFoundException;
 import com.farmacia.api.exception.business.BusinessException;
 import com.farmacia.api.mapper.VendaMapper;
-import com.farmacia.api.model.*;
+import com.farmacia.api.model.Cliente;
+import com.farmacia.api.model.ItemVenda;
+import com.farmacia.api.model.Medicamento;
+import com.farmacia.api.model.Venda;
 import com.farmacia.api.repository.VendaRepository;
 import com.farmacia.api.web.estoque.dto.MovimentacaoRequestDTO;
-import com.farmacia.api.web.venda.dto.*;
+import com.farmacia.api.web.venda.dto.ItemVendaRequestDTO;
+import com.farmacia.api.web.venda.dto.VendaRequestDTO;
+import com.farmacia.api.web.venda.dto.VendaResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,14 +45,11 @@ public class VendaService {
         for (ItemVendaRequestDTO itemDTO : request.getItens()) {
             Medicamento medicamento = medicamentoService.buscarEntidadePorId(itemDTO.getMedicamentoId());
 
-            // A entidade cuida de todas as validações
-            medicamento.baixarEstoque(itemDTO.getQuantidade());
-
-            // Baixa de estoque no log
             MovimentacaoRequestDTO mov = new MovimentacaoRequestDTO();
             mov.setMedicamentoId(medicamento.getId());
             mov.setQuantidade(itemDTO.getQuantidade());
             mov.setObservacao("Venda - Cliente: " + cliente.getNome());
+
             estoqueService.registrarSaida(mov);
 
             ItemVenda item = criarItemVenda(venda, medicamento, itemDTO.getQuantidade());
