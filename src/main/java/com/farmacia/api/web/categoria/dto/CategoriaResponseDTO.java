@@ -14,6 +14,4 @@ public class CategoriaResponseDTO {
     private Long id;
     private String nome;
     private String descricao;
-
-    // getters e setters
 }

@@ -1,6 +1,7 @@
 package com.farmacia.api.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Entity
@@ -16,10 +17,11 @@ public class Categoria {
     private Long id;
 
     // Nome funcional da categoria (ex: Analgésicos, Antibióticos)
-    @Column(nullable = false)
+    @NotBlank
+    @Column(nullable = false, length = 100)
     private String nome;
 
     // Descrição livre para uso administrativo
-    @Column(nullable = false)
+    @Column(nullable = false, length = 200)
     private String descricao;
 }

@@ -17,6 +17,4 @@ public class CategoriaRequestDTO {
 
     @NotBlank
     private String descricao;
-
-    // getters e setters
 }

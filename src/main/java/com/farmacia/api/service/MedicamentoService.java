@@ -46,7 +46,7 @@ public class MedicamentoService {
 
     @Transactional
     public MedicamentoResponseDTO cadastrar(MedicamentoRequestDTO request) {
-        // Validações preventivas de negócio (Fail-fast)
+        // Validações de negócio
         if (Boolean.FALSE.equals(request.getAtivo())) {
             throw new BusinessException("Não é permitido cadastrar um medicamento já inativo.");
         }
@@ -61,7 +61,6 @@ public class MedicamentoService {
         Medicamento medicamento = mapper.toEntity(request);
         medicamento.setCategoria(categoria);
 
-        // Garante estado consistente do objeto
         if (medicamento.getAtivo() == null) medicamento.setAtivo(true);
 
         return mapper.toDTO(medicamentoRepository.save(medicamento));
@@ -69,53 +68,38 @@ public class MedicamentoService {
 
     @Transactional
     public MedicamentoResponseDTO atualizar(Long id, MedicamentoUpdateDTO request) {
-        // Orquestração: Busca dependências externas
         Medicamento existente = buscarEntidadePorId(id);
         Categoria categoria = buscarCategoria(request.categoriaId());
 
         validarDataValidade(request.dataValidade());
 
-        // Modelo Rico: A entidade encapsula sua própria lógica de mutação de estado
-        // O estoque é preservado pois o método atualizarDados não o acessa
         existente.atualizarDados(request, categoria);
 
         return mapper.toDTO(medicamentoRepository.save(existente));
     }
 
     @Transactional
-    public void baixarEstoque(Long id, Integer quantidade) {
-        Medicamento medicamento = buscarEntidadePorId(id);
-
-        if (Boolean.FALSE.equals(medicamento.getAtivo())) throw new MedicamentoInativoException();
-        validarDataValidade(medicamento.getDataValidade());
-
-        if (medicamento.getQuantidadeEstoque() < quantidade) {
-            throw new EstoqueInsuficienteException(medicamento.getNome());
-        }
-
-        medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() - quantidade);
-    }
-
-    @Transactional
     public void alterarStatus(Long id, Boolean novoStatus) {
         Medicamento medicamento = buscarEntidadePorId(id);
-        medicamento.setAtivo(novoStatus);
+        medicamento.alterarStatus(novoStatus);
     }
 
     @Transactional
     public void excluir(Long id) {
         Medicamento medicamento = buscarEntidadePorId(id);
 
-        // Soft-delete se houver histórico de vendas; caso contrário, remoção física
+        // Soft delete se houver histórico de vendas, caso contrário remoção física
         if (vendaRepository.existsByItensMedicamentoId(id)) {
-            medicamento.setAtivo(false);
+            medicamento.alterarStatus(false);
         } else {
             medicamentoRepository.delete(medicamento);
         }
     }
 
     private void validarDataValidade(LocalDate data) {
-        if (data != null && data.isBefore(LocalDate.now())) throw new MedicamentoVencidoException();
+        if (data != null && data.isBefore(LocalDate.now())) {
+            throw new MedicamentoVencidoException();
+        }
     }
 
     private Categoria buscarCategoria(Long id) {

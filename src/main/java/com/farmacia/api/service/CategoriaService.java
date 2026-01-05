@@ -4,7 +4,7 @@ import com.farmacia.api.exception.ResourceNotFoundException;
 import com.farmacia.api.exception.business.BusinessException;
 import com.farmacia.api.model.Categoria;
 import com.farmacia.api.repository.CategoriaRepository;
-import com.farmacia.api.repository.MedicamentoRepository; // Necessário para a trava de exclusão
+import com.farmacia.api.repository.MedicamentoRepository;
 import com.farmacia.api.web.categoria.dto.CategoriaRequestDTO;
 import com.farmacia.api.web.categoria.dto.CategoriaResponseDTO;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,6 @@ public class CategoriaService {
 
     @Transactional
     public CategoriaResponseDTO cadastrar(CategoriaRequestDTO request) {
-        // Regra: Nome Único (Fail-Fast)
         if (categoriaRepository.existsByNomeIgnoreCase(request.getNome())) {
             throw new BusinessException("Já existe uma categoria com o nome: " + request.getNome());
         }
@@ -31,21 +30,36 @@ public class CategoriaService {
         categoria.setNome(request.getNome());
         categoria.setDescricao(request.getDescricao());
 
-        return toResponseDTO(categoriaRepository.save(categoria));
+        return toDTO(categoriaRepository.save(categoria));
+    }
+
+    @Transactional
+    public CategoriaResponseDTO atualizar(Long id, CategoriaRequestDTO dto) {
+        Categoria categoria = categoriaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com ID: " + id));
+
+        if (categoriaRepository.existsByNomeIgnoreCaseAndIdNot(dto.getNome(), id)) {
+            throw new BusinessException("Já existe outra categoria com o nome: " + dto.getNome());
+        }
+
+        categoria.setNome(dto.getNome());
+        categoria.setDescricao(dto.getDescricao());
+
+        return toDTO(categoriaRepository.save(categoria));
     }
 
     @Transactional(readOnly = true)
     public List<CategoriaResponseDTO> listarTodas() {
-        return categoriaRepository.findAll().stream()
-                .map(this::toResponseDTO)
+        return categoriaRepository.findAll()
+                .stream()
+                .map(this::toDTO)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public CategoriaResponseDTO buscarPorId(Long id) {
-        Categoria categoria = categoriaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com ID: " + id));
-        return toResponseDTO(categoria);
+        return toDTO(categoriaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com ID: " + id)));
     }
 
     @Transactional
@@ -54,8 +68,6 @@ public class CategoriaService {
             throw new ResourceNotFoundException("Categoria não encontrada");
         }
 
-        // Regra Sênior: Bloquear exclusão se houver medicamentos vinculados
-        // existsByCategoriaId é um query method padrão do Spring Data no MedicamentoRepository
         if (medicamentoRepository.existsByCategoriaId(id)) {
             throw new BusinessException("Não é possível excluir uma categoria que possui medicamentos vinculados.");
         }
@@ -63,11 +75,12 @@ public class CategoriaService {
         categoriaRepository.deleteById(id);
     }
 
-    private CategoriaResponseDTO toResponseDTO(Categoria categoria) {
-        CategoriaResponseDTO dto = new CategoriaResponseDTO();
-        dto.setId(categoria.getId());
-        dto.setNome(categoria.getNome());
-        dto.setDescricao(categoria.getDescricao());
-        return dto;
+    // Conversão centralizada para manter padrão DTO
+    private CategoriaResponseDTO toDTO(Categoria categoria) {
+        return new CategoriaResponseDTO(
+                categoria.getId(),
+                categoria.getNome(),
+                categoria.getDescricao()
+        );
     }
 }

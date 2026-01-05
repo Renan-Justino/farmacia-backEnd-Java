@@ -8,17 +8,17 @@ import com.farmacia.api.model.Cliente;
 import com.farmacia.api.repository.ClienteRepository;
 import com.farmacia.api.web.cliente.dto.ClienteRequestDTO;
 import com.farmacia.api.web.cliente.dto.ClienteResponseDTO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.Period;
 import java.util.List;
 
 /**
- * Camada de serviço para gestão de clientes.
- * Centraliza as regras de negócio e garante a integridade dos dados antes da persistência.
+ * Serviço para gerenciamento de clientes.
+ * Centraliza regras de negócio, validações e integridade antes da persistência.
  */
 @Service
 @RequiredArgsConstructor
@@ -29,14 +29,10 @@ public class ClienteService {
 
     @Transactional(readOnly = true)
     public List<ClienteResponseDTO> listarTodos() {
-        return repository.findAll().stream()
+        return repository.findAll()
+                .stream()
                 .map(mapper::toDTO)
                 .toList();
-    }
-
-    public Cliente buscarEntidadePorId(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com ID: " + id));
     }
 
     @Transactional(readOnly = true)
@@ -44,13 +40,18 @@ public class ClienteService {
         return mapper.toDTO(buscarEntidadePorId(id));
     }
 
+    public Cliente buscarEntidadePorId(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com ID: " + id));
+    }
+
     /**
-     * Persiste um novo cliente após validar restrições de unicidade e maioridade.
+     * Salva um novo cliente após validações.
      */
     @Transactional
-    public ClienteResponseDTO salvar(ClienteRequestDTO dto) {
-        validarUnicidadeCpf(dto.getCpf());
-        validarUnicidadeEmail(dto.getEmail());
+    public ClienteResponseDTO salvar(@Valid ClienteRequestDTO dto) {
+        validarUnicidadeCpf(dto.getCpf(), null);
+        validarUnicidadeEmail(dto.getEmail(), null);
         validarMaioridade(dto.getDataNascimento());
 
         Cliente cliente = mapper.toEntity(dto);
@@ -58,45 +59,53 @@ public class ClienteService {
     }
 
     /**
-     * Atualiza dados de um cliente existente, validando se novos dados conflitam com registros atuais.
+     * Atualiza um cliente existente.
      */
     @Transactional
-    public ClienteResponseDTO atualizar(Long id, ClienteRequestDTO dto) {
+    public ClienteResponseDTO atualizar(Long id, @Valid ClienteRequestDTO dto) {
         Cliente clienteExistente = buscarEntidadePorId(id);
 
-        // Valida se o novo CPF já pertence a outro usuário
-        if (!clienteExistente.getCpf().equals(dto.getCpf())) {
-            validarUnicidadeCpf(dto.getCpf());
-        }
-
-        // Valida se o novo Email já pertence a outro usuário
-        if (!clienteExistente.getEmail().equalsIgnoreCase(dto.getEmail())) {
-            validarUnicidadeEmail(dto.getEmail());
-        }
-
+        validarUnicidadeCpf(dto.getCpf(), id);
+        validarUnicidadeEmail(dto.getEmail(), id);
         validarMaioridade(dto.getDataNascimento());
-        mapper.updateEntity(dto, clienteExistente);
 
+        mapper.updateEntity(dto, clienteExistente);
         return mapper.toDTO(repository.save(clienteExistente));
     }
 
-    private void validarUnicidadeCpf(String cpf) {
-        if (repository.existsByCpf(cpf)) {
+    /**
+     * Valida se o CPF é único.
+     * @param cpf valor a validar
+     * @param idExistente id do cliente existente (para update), null se novo registro
+     */
+    private void validarUnicidadeCpf(String cpf, Long idExistente) {
+        boolean existe = (idExistente == null)
+                ? repository.existsByCpf(cpf)
+                : repository.existsByCpfAndIdNot(cpf, idExistente);
+
+        if (existe) {
             throw new BusinessException("Já existe um cliente cadastrado com este CPF.");
         }
     }
 
     /**
-     * Garante a unicidade do e-mail na base de dados, prevenindo Constraint Violations genéricas (Erro 500).
+     * Valida se o e-mail é único.
      */
-    private void validarUnicidadeEmail(String email) {
-        if (repository.existsByEmail(email)) {
+    private void validarUnicidadeEmail(String email, Long idExistente) {
+        boolean existe = (idExistente == null)
+                ? repository.existsByEmail(email)
+                : repository.existsByEmailAndIdNot(email, idExistente);
+
+        if (existe) {
             throw new BusinessException("Já existe um cliente cadastrado com este e-mail.");
         }
     }
 
+    /**
+     * Garante que o cliente tenha 18 anos ou mais.
+     */
     private void validarMaioridade(LocalDate dataNascimento) {
-        if (Period.between(dataNascimento, LocalDate.now()).getYears() < 18) {
+        if (dataNascimento.isAfter(LocalDate.now().minusYears(18))) {
             throw new ClienteMenorDeIdadeException(
                     "É necessário ter 18 anos ou mais para se cadastrar"
             );

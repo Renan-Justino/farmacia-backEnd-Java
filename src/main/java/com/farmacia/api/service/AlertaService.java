@@ -17,22 +17,19 @@ public class AlertaService {
     private final MedicamentoRepository medicamentoRepository;
     private final MedicamentoMapper mapper;
 
-    private static final Integer LIMITE_ESTOQUE_BAIXO = 10;
-    private static final Integer DIAS_VALIDADE_PROXIMA = 30;
-
     @Transactional(readOnly = true)
-    public List<MedicamentoResponseDTO> listarEstoqueBaixo() {
+    public List<MedicamentoResponseDTO> listarEstoqueBaixo(int limite) {
         return medicamentoRepository
-                .findByAtivoTrueAndQuantidadeEstoqueLessThanEqual(LIMITE_ESTOQUE_BAIXO)
+                .findByAtivoTrueAndQuantidadeEstoqueLessThanEqual(limite)
                 .stream()
                 .map(mapper::toDTO)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MedicamentoResponseDTO> listarValidadeProxima() {
+    public List<MedicamentoResponseDTO> listarValidadeProxima(int dias) {
         LocalDate hoje = LocalDate.now();
-        LocalDate limite = hoje.plusDays(DIAS_VALIDADE_PROXIMA);
+        LocalDate limite = hoje.plusDays(dias);
 
         return medicamentoRepository
                 .findByAtivoTrueAndDataValidadeBetween(hoje, limite)

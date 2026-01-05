@@ -1,7 +1,9 @@
 package com.farmacia.api.model;
 
+import com.farmacia.api.exception.business.EstoqueInsuficienteException;
+import com.farmacia.api.exception.business.MedicamentoInativoException;
+import com.farmacia.api.exception.business.MedicamentoVencidoException;
 import com.farmacia.api.web.medicamento.dto.MedicamentoUpdateDTO;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,7 +11,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "medicamento")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,26 +29,29 @@ public class Medicamento {
     @Column(nullable = false)
     private BigDecimal preco;
 
-    // Quantidade atual disponível em estoque
     @Column(nullable = false)
     private Integer quantidadeEstoque;
 
     private LocalDate dataValidade;
 
-    // Medicamento inativo não pode ser vendido
     @Column(nullable = false)
     private Boolean ativo = true;
 
-    // Categoria é referência externa ao agregado Medicamento
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoria_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Categoria categoria;
 
-    /**
-     * Atualiza os dados principais do medicamento.
-     * Estoque não é alterado aqui por ser responsabilidade do módulo de estoque.
-     */
+    public void validarDisponibilidadeParaVenda(int quantidade) {
+        if (!Boolean.TRUE.equals(ativo)) throw new MedicamentoInativoException();
+        if (dataValidade != null && dataValidade.isBefore(LocalDate.now())) throw new MedicamentoVencidoException();
+        if (quantidade <= 0) throw new IllegalArgumentException("Quantidade deve ser maior que zero.");
+        if (quantidadeEstoque < quantidade) throw new EstoqueInsuficienteException(nome);
+    }
+
+    public void baixarEstoque(int quantidade) {
+        validarDisponibilidadeParaVenda(quantidade);
+        quantidadeEstoque -= quantidade;
+    }
+
     public void atualizarDados(MedicamentoUpdateDTO dto, Categoria novaCategoria) {
         this.nome = dto.nome();
         this.descricao = dto.descricao();
@@ -55,5 +59,9 @@ public class Medicamento {
         this.dataValidade = dto.dataValidade();
         this.ativo = dto.ativo();
         this.categoria = novaCategoria;
+    }
+
+    public void alterarStatus(Boolean status) {
+        this.ativo = status;
     }
 }

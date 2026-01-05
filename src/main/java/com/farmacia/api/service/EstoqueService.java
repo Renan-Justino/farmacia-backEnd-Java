@@ -1,6 +1,5 @@
 package com.farmacia.api.service;
 
-import com.farmacia.api.exception.business.EstoqueInsuficienteException;
 import com.farmacia.api.model.Medicamento;
 import com.farmacia.api.model.MovimentacaoEstoque;
 import com.farmacia.api.model.enums.TipoMovimentacao;
@@ -24,17 +23,11 @@ public class EstoqueService {
 
     @Transactional(readOnly = true)
     public List<MovimentacaoResponseDTO> listarPorMedicamento(Long medicamentoId) {
-        medicamentoService.buscarEntidadePorId(medicamentoId);
-        return repository.findByMedicamentoIdOrderByDataHoraDesc(medicamentoId)
+        Medicamento medicamento = medicamentoService.buscarEntidadePorId(medicamentoId);
+        return repository.findByMedicamentoIdOrderByDataHoraDesc(medicamento.getId())
                 .stream()
-                .map(m -> new MovimentacaoResponseDTO(
-                        m.getId(),
-                        m.getMedicamento().getNome(),
-                        m.getTipo().name(),
-                        m.getQuantidade(),
-                        m.getObservacao(),
-                        m.getDataHora()
-                )).toList();
+                .map(this::toResponseDTO)
+                .toList();
     }
 
     @Transactional
@@ -49,26 +42,44 @@ public class EstoqueService {
 
     private void processarMovimentacao(MovimentacaoRequestDTO dto, TipoMovimentacao tipo) {
         Medicamento medicamento = medicamentoService.buscarEntidadePorId(dto.getMedicamentoId());
+        int quantidade = dto.getQuantidade();
 
         if (tipo == TipoMovimentacao.SAIDA) {
-            if (medicamento.getQuantidadeEstoque() <= 0 || medicamento.getQuantidadeEstoque() < dto.getQuantidade()) {
-                throw new EstoqueInsuficienteException(medicamento.getNome());
-            }
-            medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() - dto.getQuantidade());
+            medicamento.baixarEstoque(quantidade); // método encapsulado na entidade
         } else {
-            medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() + dto.getQuantidade());
+            adicionarEstoque(medicamento, quantidade); // encapsula entrada de estoque
         }
 
         salvarLogMovimentacao(medicamento, tipo, dto);
     }
 
-    private void salvarLogMovimentacao(Medicamento m, TipoMovimentacao tipo, MovimentacaoRequestDTO dto) {
+    private void adicionarEstoque(Medicamento medicamento, int quantidade) {
+        if (quantidade <= 0) throw new IllegalArgumentException("Quantidade deve ser maior que zero.");
+        medicamento.setQuantidadeEstoque(medicamento.getQuantidadeEstoque() + quantidade);
+    }
+
+    private void salvarLogMovimentacao(Medicamento medicamento, TipoMovimentacao tipo, MovimentacaoRequestDTO dto) {
         MovimentacaoEstoque mov = new MovimentacaoEstoque();
-        mov.setMedicamento(m);
+        mov.setMedicamento(medicamento);
         mov.setTipo(tipo);
         mov.setQuantidade(dto.getQuantidade());
         mov.setObservacao(dto.getObservacao());
-        mov.setDataHora(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
+        mov.setDataHora(agora());
         repository.save(mov);
+    }
+
+    private LocalDateTime agora() {
+        return LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
+    }
+
+    private MovimentacaoResponseDTO toResponseDTO(MovimentacaoEstoque m) {
+        return new MovimentacaoResponseDTO(
+                m.getId(),
+                m.getMedicamento().getNome(),
+                m.getTipo().name(),
+                m.getQuantidade(),
+                m.getObservacao(),
+                m.getDataHora()
+        );
     }
 }

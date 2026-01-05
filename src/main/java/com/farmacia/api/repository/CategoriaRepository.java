@@ -8,4 +8,7 @@ import org.springframework.stereotype.Repository;
 public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 
     boolean existsByNomeIgnoreCase(String nome);
+
+    // Método necessário para checar unicidade na atualização
+    boolean existsByNomeIgnoreCaseAndIdNot(String nome, Long id);
 }
