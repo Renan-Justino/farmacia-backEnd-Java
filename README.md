@@ -324,7 +324,54 @@ Authorization: Bearer <TOKEN>
 * Dockerização completa
 * Documentação Swagger integrada
 
+## Decisões Técnicas Relevantes
+
+As decisões técnicas adotadas neste projeto priorizam clareza, manutenibilidade
+e aderência a cenários reais de produção, evitando abstrações desnecessárias e 
+complexidade artificial.
+
+* Organização por **domínio funcional**, em vez de camadas técnicas genéricas, 
+ facilitando a evolução independente de cada contexto
+* Uso de **DTOs** para desacoplamento entre a camada web e o domínio, evitando 
+ exposição direta das entidades JPA
+* Centralização das **regras de negócio na camada de serviço**, prevenindo lógica 
+ distribuída em controllers ou repositórios
+* Implementação de **exceções de domínio**, garantindo fluxo previsível e mensagens
+ claras para o consumidor da API
+* Adoção de **JWT** para manter a aplicação stateless e preparada para escalabilidade
+ horizontal
+
 ---
+
+## Evolução para Produção e Escalabilidade
+
+O projeto foi estruturado com foco em extensibilidade, permitindo evolução gradual para ambientes de produção sem necessidade de refatorações estruturais profundas.
+
+Entre as melhorias previstas para um cenário produtivo, destacam-se:
+
+* Versionamento de banco de dados com **Flyway ou Liquibase**
+* Definição explícita de **índices e constraints** no banco de dados
+* Ajustes de **fetch strategies** e otimização de consultas críticas
+* Implementação de **cache** para operações de leitura frequente
+* Observabilidade com **logs estruturados, métricas e tracing**
+* Pipeline de **CI/CD** para build, testes e deploy automatizados
+* Suporte a múltiplos ambientes (dev, staging, prod)
+
+---
+
+## Testes e Qualidade de Código
+
+A base do projeto foi desenhada para facilitar a implementação de testes automatizados,
+garantindo confiabilidade e segurança na evolução do código.
+
+A estratégia de qualidade contempla:
+
+* Testes **unitários** para regras de negócio críticas
+* Testes de **integração** para fluxos completos (vendas, estoque, autenticação)
+* Uso de **Testcontainers** para validação real de integrações com banco de dados
+* Separação clara de responsabilidades, permitindo testes isolados sem dependência de 
+ infraestrutura
+* Padrões de código voltados à legibilidade, consistência e fácil manutenção
 
 ## Autor
 
