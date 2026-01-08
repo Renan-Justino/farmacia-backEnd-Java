@@ -26,6 +26,7 @@ public class ClienteService {
 
     private final ClienteRepository repository;
     private final ClienteMapper mapper;
+    private final LogService logService;
 
     @Transactional(readOnly = true)
     public List<ClienteResponseDTO> listarTodos() {
@@ -55,7 +56,19 @@ public class ClienteService {
         validarMaioridade(dto.getDataNascimento());
 
         Cliente cliente = mapper.toEntity(dto);
-        return mapper.toDTO(repository.save(cliente));
+        ClienteResponseDTO response = mapper.toDTO(repository.save(cliente));
+        
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Cliente criado: %s (CPF: %s)", cliente.getNome(), cliente.getCpf()),
+            "CLIENTE",
+            "CREATE",
+            "CLIENTE",
+            cliente.getId(),
+            String.format("Nome: %s, Email: %s", cliente.getNome(), cliente.getEmail())
+        );
+        
+        return response;
     }
 
     /**
@@ -70,7 +83,19 @@ public class ClienteService {
         validarMaioridade(dto.getDataNascimento());
 
         mapper.updateEntity(dto, clienteExistente);
-        return mapper.toDTO(repository.save(clienteExistente));
+        ClienteResponseDTO response = mapper.toDTO(repository.save(clienteExistente));
+        
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Cliente atualizado: %s (ID: %d)", clienteExistente.getNome(), id),
+            "CLIENTE",
+            "UPDATE",
+            "CLIENTE",
+            id,
+            String.format("Nome: %s, Email: %s", clienteExistente.getNome(), clienteExistente.getEmail())
+        );
+        
+        return response;
     }
 
     /**

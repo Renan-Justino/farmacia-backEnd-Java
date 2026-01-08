@@ -22,6 +22,9 @@ public class JwtService {
     }
 
     private Key getSigningKey() {
+        if (properties.getSecret() == null || properties.getSecret().isBlank()) {
+            throw new IllegalStateException("JWT secret is not configured. Set 'jwt.secret' in application properties or env variables.");
+        }
         return Keys.hmacShaKeyFor(properties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 

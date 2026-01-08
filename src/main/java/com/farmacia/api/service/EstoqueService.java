@@ -20,6 +20,7 @@ public class EstoqueService {
 
     private final MovimentacaoEstoqueRepository repository;
     private final MedicamentoService medicamentoService;
+    private final LogService logService;
 
     @Transactional(readOnly = true)
     public List<MovimentacaoResponseDTO> listarPorMedicamento(Long medicamentoId) {
@@ -43,6 +44,7 @@ public class EstoqueService {
     private void processarMovimentacao(MovimentacaoRequestDTO dto, TipoMovimentacao tipo) {
         Medicamento medicamento = medicamentoService.buscarEntidadePorId(dto.getMedicamentoId());
         int quantidade = dto.getQuantidade();
+        int estoqueAnterior = medicamento.getQuantidadeEstoque();
 
         if (tipo == TipoMovimentacao.SAIDA) {
             medicamento.baixarEstoque(quantidade); // método encapsulado na entidade
@@ -51,6 +53,21 @@ public class EstoqueService {
         }
 
         salvarLogMovimentacao(medicamento, tipo, dto);
+        
+        // Registrar log de auditoria
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Movimentação de estoque: %s - %s de %d unidades do medicamento %s", 
+                tipo.name(), tipo == TipoMovimentacao.ENTRADA ? "Entrada" : "Saída", 
+                quantidade, medicamento.getNome()),
+            "ESTOQUE",
+            tipo == TipoMovimentacao.ENTRADA ? "ENTRADA" : "SAIDA",
+            "ESTOQUE",
+            medicamento.getId(),
+            String.format("Medicamento: %s | Quantidade: %d | Estoque anterior: %d | Estoque atual: %d | Observação: %s",
+                medicamento.getNome(), quantidade, estoqueAnterior, medicamento.getQuantidadeEstoque(), 
+                dto.getObservacao() != null ? dto.getObservacao() : "N/A")
+        );
     }
 
     private void adicionarEstoque(Medicamento medicamento, int quantidade) {

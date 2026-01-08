@@ -26,6 +26,7 @@ public class MedicamentoService {
     private final CategoriaRepository categoriaRepository;
     private final VendaRepository vendaRepository;
     private final MedicamentoMapper mapper;
+    private final LogService logService;
 
     @Transactional(readOnly = true)
     public List<MedicamentoResponseDTO> listarTodos() {
@@ -63,7 +64,20 @@ public class MedicamentoService {
 
         if (medicamento.getAtivo() == null) medicamento.setAtivo(true);
 
-        return mapper.toDTO(medicamentoRepository.save(medicamento));
+        MedicamentoResponseDTO response = mapper.toDTO(medicamentoRepository.save(medicamento));
+        
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Medicamento criado: %s", medicamento.getNome()),
+            "MEDICAMENTO",
+            "CREATE",
+            "MEDICAMENTO",
+            medicamento.getId(),
+            String.format("Nome: %s, Categoria: %s, Estoque inicial: %d", 
+                medicamento.getNome(), categoria.getNome(), medicamento.getQuantidadeEstoque())
+        );
+        
+        return response;
     }
 
     @Transactional
@@ -75,24 +89,66 @@ public class MedicamentoService {
 
         existente.atualizarDados(request, categoria);
 
-        return mapper.toDTO(medicamentoRepository.save(existente));
+        MedicamentoResponseDTO response = mapper.toDTO(medicamentoRepository.save(existente));
+        
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Medicamento atualizado: %s (ID: %d)", existente.getNome(), id),
+            "MEDICAMENTO",
+            "UPDATE",
+            "MEDICAMENTO",
+            id,
+            String.format("Nome: %s, Categoria: %s", existente.getNome(), categoria.getNome())
+        );
+        
+        return response;
     }
 
     @Transactional
     public void alterarStatus(Long id, Boolean novoStatus) {
         Medicamento medicamento = buscarEntidadePorId(id);
         medicamento.alterarStatus(novoStatus);
+        
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Status do medicamento alterado: %s (ID: %d) - %s", 
+                medicamento.getNome(), id, novoStatus ? "ATIVO" : "INATIVO"),
+            "MEDICAMENTO",
+            "UPDATE_STATUS",
+            "MEDICAMENTO",
+            id,
+            String.format("Nome: %s, Novo status: %s", medicamento.getNome(), novoStatus ? "ATIVO" : "INATIVO")
+        );
     }
 
     @Transactional
     public void excluir(Long id) {
         Medicamento medicamento = buscarEntidadePorId(id);
+        String nomeMedicamento = medicamento.getNome();
 
         // Soft delete se houver histórico de vendas, caso contrário remoção física
         if (vendaRepository.existsByItensMedicamentoId(id)) {
             medicamento.alterarStatus(false);
+            logService.registrarLog(
+                com.farmacia.api.model.LogOperacao.NivelLog.WARN,
+                String.format("Medicamento desativado (soft delete): %s (ID: %d)", nomeMedicamento, id),
+                "MEDICAMENTO",
+                "DELETE",
+                "MEDICAMENTO",
+                id,
+                "Medicamento possui histórico de vendas, foi desativado em vez de excluído"
+            );
         } else {
             medicamentoRepository.delete(medicamento);
+            logService.registrarLog(
+                com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+                String.format("Medicamento excluído: %s (ID: %d)", nomeMedicamento, id),
+                "MEDICAMENTO",
+                "DELETE",
+                "MEDICAMENTO",
+                id,
+                "Medicamento removido permanentemente do sistema"
+            );
         }
     }
 

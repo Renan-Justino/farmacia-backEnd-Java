@@ -19,6 +19,7 @@ public class CategoriaService {
 
     private final CategoriaRepository categoriaRepository;
     private final MedicamentoRepository medicamentoRepository;
+    private final LogService logService;
 
     @Transactional
     public CategoriaResponseDTO cadastrar(CategoriaRequestDTO request) {
@@ -30,7 +31,19 @@ public class CategoriaService {
         categoria.setNome(request.getNome());
         categoria.setDescricao(request.getDescricao());
 
-        return toDTO(categoriaRepository.save(categoria));
+        CategoriaResponseDTO response = toDTO(categoriaRepository.save(categoria));
+        
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Categoria criada: %s", categoria.getNome()),
+            "CATEGORIA",
+            "CREATE",
+            "CATEGORIA",
+            categoria.getId(),
+            String.format("Nome: %s, Descrição: %s", categoria.getNome(), categoria.getDescricao())
+        );
+        
+        return response;
     }
 
     @Transactional
@@ -45,7 +58,19 @@ public class CategoriaService {
         categoria.setNome(dto.getNome());
         categoria.setDescricao(dto.getDescricao());
 
-        return toDTO(categoriaRepository.save(categoria));
+        CategoriaResponseDTO response = toDTO(categoriaRepository.save(categoria));
+        
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Categoria atualizada: %s (ID: %d)", categoria.getNome(), id),
+            "CATEGORIA",
+            "UPDATE",
+            "CATEGORIA",
+            id,
+            String.format("Nome: %s, Descrição: %s", categoria.getNome(), categoria.getDescricao())
+        );
+        
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -72,7 +97,20 @@ public class CategoriaService {
             throw new BusinessException("Não é possível excluir uma categoria que possui medicamentos vinculados.");
         }
 
+        Categoria categoria = categoriaRepository.findById(id).orElse(null);
+        String nomeCategoria = categoria != null ? categoria.getNome() : "ID: " + id;
+        
         categoriaRepository.deleteById(id);
+        
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Categoria excluída: %s (ID: %d)", nomeCategoria, id),
+            "CATEGORIA",
+            "DELETE",
+            "CATEGORIA",
+            id,
+            "Categoria removida permanentemente do sistema"
+        );
     }
 
     // Conversão centralizada para manter padrão DTO

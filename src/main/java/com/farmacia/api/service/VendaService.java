@@ -31,6 +31,7 @@ public class VendaService {
     private final MedicamentoService medicamentoService;
     private final ClienteService clienteService;
     private final EstoqueService estoqueService;
+    private final LogService logService;
 
     @Transactional
     public VendaResponseDTO registrarVenda(VendaRequestDTO request) {
@@ -58,7 +59,28 @@ public class VendaService {
         }
 
         venda.setValorTotal(totalVenda);
-        return vendaMapper.toDTO(vendaRepository.save(venda));
+        VendaResponseDTO response = vendaMapper.toDTO(vendaRepository.save(venda));
+        
+        // Construir detalhes dos itens para o log
+        StringBuilder detalhesItens = new StringBuilder();
+        for (ItemVenda item : venda.getItens()) {
+            detalhesItens.append(String.format("%s (Qtd: %d, Preço: R$ %.2f); ", 
+                item.getMedicamento().getNome(), item.getQuantidade(), item.getPrecoUnitario()));
+        }
+        
+        logService.registrarLog(
+            com.farmacia.api.model.LogOperacao.NivelLog.INFO,
+            String.format("Venda registrada: Cliente %s - Total: R$ %.2f", 
+                cliente.getNome(), totalVenda),
+            "VENDA",
+            "CREATE",
+            "VENDA",
+            venda.getId(),
+            String.format("Cliente: %s (ID: %d) | Total: R$ %.2f | Itens: %d | Detalhes: %s",
+                cliente.getNome(), cliente.getId(), totalVenda, venda.getItens().size(), detalhesItens.toString())
+        );
+        
+        return response;
     }
 
     @Transactional(readOnly = true)
